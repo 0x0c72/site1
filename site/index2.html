@@ -1,0 +1,115 @@
+<html>
+    <head>
+        <script type="text/javascript">
+            var request = createRequestObject();
+            var dataReturn='';
+            var ajaxTimeout='';
+            var enterChecker=false;
+
+            function createRequestObject()
+            {
+                var ro;
+                var browser = navigator.appName;
+                if(browser == 'Microsoft Internet Explorer')
+                {
+                    ro = new ActiveXObject('Microsoft.XMLHTTP');
+                }
+                else{
+                    ro = new XMLHttpRequest();
+                }
+                return ro;
+            }
+
+            function makeRequest (url, fun)
+            {
+                enterChecker=false;
+                request.open('get', url);
+                request.onreadystatechange = function() { handleResponse(fun); }
+                
+                try{
+                    request.send(null);
+                }
+                catch(err){
+                    alert('Error occured: '+err);
+                    showHidePreloader(false); 
+                }
+            }
+
+            function makePostRequest(url, params, fun)
+            {
+                request.open('POST', url, true);
+
+                //Send the proper header information along with the request
+                request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                request.setRequestHeader('Content-length', params.length);
+                request.setRequestHeader('Connection', 'close');
+
+                request.onreadystatechange = function() {//Call a function when the state changes.
+                    if(request.readyState == 4 && request.status == 200) {
+                        dataReturn=request.responseText;
+                        if(fun!='')
+                            ajaxTimeout=setTimeout(fun+'()', 200);
+                    }
+                }
+                
+                try{
+                    request.send(params);
+                }
+                catch(err){
+                    alert('Error occured: '+err);
+                    showHidePreloader(false); 
+                }
+            }
+
+            function handleResponse(fun) {
+                if(request.readyState < 4)
+                {
+                    ajaxTimeout=setTimeout('handleResponse(\''+fun+'\')',10);
+                }
+                else if(request.readyState == 4 && !enterChecker)
+                {
+                    enterChecker=true;
+                    var response = request.responseText;
+                    dataReturn=response;
+                    
+                    if(fun!='')
+                        ajaxTimeout=setTimeout(fun+'()', 200);
+                }
+            }
+
+            function stopAjax()
+            {
+                clearTimeout('ajaxTimeout');
+                ajaxTimeout='';
+            }
+
+
+            function showContent(){
+                showHidePreloader(false);
+                document.getElementById('resultDiv').innerHTML=dataReturn;
+            }
+
+            function showHidePreloader(show){
+                if(show)
+                    document.getElementById('preloader').style.display='block';
+                else
+                    document.getElementById('preloader').style.display='none';
+            }
+        </script>
+        <style>
+            #preloader{
+                display:none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="preloader"><img src="ajax-loader.gif" /></div>
+        <input type="button" onclick="showHidePreloader(true); makeRequest('yourpagename.php?param1=
+value1&param2=value2', 'showContent')" value="Send GET request" />
+        
+        <input type="button" onclick="showHidePreloader(true); makePostRequest('yourpagename.php?param1=
+value1&param2=value2', 'post_param1=post_value1&post_param2=value2', 'showContent')" value="Send POST 
+request" />
+        <div id="resultDiv"></div>
+    </body>
+</html>
